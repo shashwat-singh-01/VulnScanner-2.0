@@ -1,6 +1,7 @@
 import os
 import socket
 import nmap
+from utils.scoring import get_port_risk  # ✅ Import the scoring function
 
 # Manually add Nmap to PATH if not already in it
 nmap_path = r"C:\Program Files (x86)\Nmap"
@@ -32,13 +33,15 @@ def run_nmap(ip_or_domain):
                 product = nm[resolved_ip][proto][port].get('product', '')
                 version = nm[resolved_ip][proto][port].get('version', '')
 
+                # ✅ Include risk score
                 results.append({
                     "protocol": proto,
                     "port": port,
                     "state": state,
                     "service": name,
                     "product": product,
-                    "version": version
+                    "version": version,
+                    "risk": get_port_risk(port)  # ⭐ Added field
                 })
 
         return results

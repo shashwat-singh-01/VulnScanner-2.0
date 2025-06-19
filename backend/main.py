@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import scan
 
+from utils.scoring import get_port_risk
+
+
 app = FastAPI()
 
 # Allow frontend dev access (adjust for prod)
