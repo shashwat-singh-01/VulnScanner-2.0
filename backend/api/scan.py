@@ -33,11 +33,16 @@ class ReportRequest(BaseModel):
     results: List[ScanResult]
 
 @router.get("/scan")
-def scan(ip: str):
-    result = run_nmap(ip)
-    if "error" in result:
-        return JSONResponse(content={"status": "unreachable", "message": result["error"]}, status_code=200)
-    return {"status": "ok", "results": result}
+async def scan(ip: str):
+    try:
+        result = run_nmap(ip)
+        if isinstance(result, dict) and "error" in result:
+            return JSONResponse(status_code=200, content={"error": result["error"]})
+        return {"results": result}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Internal server error."})
+
+
 
 
 @router.post("/generate_report")

@@ -18,7 +18,8 @@ def run_nmap(ip_or_domain):
         nm.scan(resolved_ip, arguments='-Pn -sS -sV -T4 --script vulners --top-ports 100')
 
         if resolved_ip not in nm.all_hosts():
-            return {"error": f"No scan results for {ip_or_domain}. Resolved IP: {resolved_ip}"}
+            return {"error": f"The host '{ip_or_domain}' appears to be down or blocking ping probes."}
+
 
         results = []
 
@@ -66,6 +67,10 @@ def run_nmap(ip_or_domain):
                     "risk": get_port_risk(port),
                     "vulnerability": vuln_info or "None"
                 })
+                
+        if not results:
+            return {"error": f"The host '{ip_or_domain}' appears to be down or blocking probes."}
+
 
         return results
 

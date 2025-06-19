@@ -3,6 +3,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from io import BytesIO
+from xml.sax.saxutils import escape
 from datetime import datetime
 
 def generate_pdf_report(target, results):
@@ -11,15 +12,18 @@ def generate_pdf_report(target, results):
     styles = getSampleStyleSheet()
 
     # Custom styles
-    header_style = ParagraphStyle("Header", parent=styles["Heading1"], fontSize=18, spaceAfter=10, textColor=colors.darkblue)
-    subheader_style = ParagraphStyle("SubHeader", parent=styles["Heading2"], fontSize=13, spaceAfter=6, textColor=colors.HexColor("#333"))
-    normal_style = ParagraphStyle("NormalText", parent=styles["Normal"], fontSize=10, leading=14)
+    header_style = ParagraphStyle(
+        "Header", parent=styles["Heading1"], fontSize=18, spaceAfter=10, textColor=colors.darkblue)
+    subheader_style = ParagraphStyle(
+        "SubHeader", parent=styles["Heading2"], fontSize=13, spaceAfter=6, textColor=colors.HexColor("#333"))
+    normal_style = ParagraphStyle(
+        "NormalText", parent=styles["Normal"], fontSize=10, leading=14)
 
     story = []
 
     # Title section
     story.append(Paragraph("🔐 <b>VulnScanner Security Report</b>", header_style))
-    story.append(Paragraph(f"📍 <b>Target:</b> {target}", normal_style))
+    story.append(Paragraph(f"📍 <b>Target:</b> {escape(str(target))}", normal_style))
     story.append(Paragraph(f"🕒 <b>Scan Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
     story.append(Spacer(1, 12))
 
@@ -34,6 +38,7 @@ def generate_pdf_report(target, results):
             item.get("version", "-"),
             item.get("risk", "-").capitalize()
         ])
+
     table = Table(data, hAlign="LEFT")
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
@@ -46,36 +51,50 @@ def generate_pdf_report(target, results):
     story.append(table)
     story.append(Spacer(1, 16))
 
-    # Vulnerabilities
+    # Vulnerabilities section
     for item in results:
         vulns = item.get("vulnerability", [])
-        if vulns:
-            story.append(Paragraph(f"🔎 <b>Vulnerabilities on Port {item['port']} ({item.get('service', '-')})</b>", subheader_style))
+        if isinstance(vulns, list) and vulns:
+            story.append(Paragraph(
+                f"🔎 <b>Vulnerabilities on Port {escape(str(item['port']))} ({escape(str(item.get('service', '-')))})</b>",
+                subheader_style
+            ))
+
             for vuln in vulns:
-                cve = vuln.get("id", "-")
-                title = vuln.get("title", "-")
-                
-                # Extract score from title if cvss is None
-                cvss = vuln.get("cvss")
-                if not cvss or not isinstance(cvss, (float, int, str)) or str(cvss).lower() == 'null':
-                    try:
-                        cvss = title.split()[0] if title.split()[0].replace('.', '').isdigit() else "-"
-                    except:
-                        cvss = "-"
+                try:
+                    cve = vuln.get("id", "-")
+                    title = vuln.get("title", "-")
+                    cvss = vuln.get("cvss", "-")
+                    solution = vuln.get("solution", "-")
 
-                # Solution: derive from URL if present
-                solution = vuln.get("solution")
-                if not solution or solution.strip() == "-":
-                    try:
-                        solution = "Refer: " + title.split()[-1] if "http" in title.split()[-1] else "-"
-                    except:
-                        solution = "-"
+                    # Fallback for CVSS
+                    if not cvss or str(cvss).lower() in ['null', 'none']:
+                        try:
+                            tokens = title.split()
+                            cvss = tokens[0] if tokens[0].replace('.', '', 1).isdigit() else "-"
+                        except:
+                            cvss = "-"
 
-                story.append(Paragraph(f"<b>🛡️ {cve}</b>: {title}", normal_style))
-                story.append(Paragraph(f"• <b>CVSS Score:</b> {cvss}", normal_style))
-                story.append(Paragraph(f"• <b>Recommended Fix:</b> {solution}", normal_style))
-                story.append(Spacer(1, 8))
+                    # Fallback for solution from URL in title
+                    if not solution or solution.strip() == "-":
+                        try:
+                            tokens = title.split()
+                            last_token = tokens[-1]
+                            solution = "Refer: " + last_token if "http" in last_token else "-"
+                        except:
+                            solution = "-"
 
+                    story.append(Paragraph(f"<b>🛡️ {escape(str(cve))}</b>: {escape(str(title))}", normal_style))
+                    story.append(Paragraph(f"• <b>CVSS Score:</b> {escape(str(cvss))}", normal_style))
+                    story.append(Paragraph(f"• <b>Recommended Fix:</b> {escape(str(solution))}", normal_style))
+                    story.append(Spacer(1, 8))
+
+                except Exception:
+                    story.append(Paragraph("<b>⚠️ Skipped malformed vulnerability entry</b>", normal_style))
+                    story.append(Spacer(1, 6))
+                    continue
+
+    # Build PDF
     doc.build(story)
     pdf_data = buffer.getvalue()
     buffer.close()
