@@ -1,43 +1,82 @@
-# backend/utils/pdf_report.py
-from fpdf import FPDF
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from io import BytesIO
 from datetime import datetime
 
-class PDF(FPDF):
-    def header(self):
-        self.set_font("Arial", "B", 14)
-        self.cell(0, 10, "VulnScanner Report", ln=1, align="C")
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font("Arial", "I", 10)
-        self.set_text_color(128)
-        self.cell(0, 10, "© 2025 Shashwat Singh | VulnScanner", align="C")
-
 def generate_pdf_report(target, results):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
 
-    pdf.cell(0, 10, f"Target: {target}", ln=True)
-    pdf.cell(0, 10, f"Scan Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
-    pdf.ln(5)
+    # Custom styles
+    header_style = ParagraphStyle("Header", parent=styles["Heading1"], fontSize=18, spaceAfter=10, textColor=colors.darkblue)
+    subheader_style = ParagraphStyle("SubHeader", parent=styles["Heading2"], fontSize=13, spaceAfter=6, textColor=colors.HexColor("#333"))
+    normal_style = ParagraphStyle("NormalText", parent=styles["Normal"], fontSize=10, leading=14)
 
-    pdf.set_fill_color(200, 220, 255)
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(20, 8, "Port", 1, 0, "C", 1)
-    pdf.cell(20, 8, "Proto", 1, 0, "C", 1)
-    pdf.cell(30, 8, "Service", 1, 0, "C", 1)
-    pdf.cell(30, 8, "Product", 1, 0, "C", 1)
-    pdf.cell(30, 8, "Version", 1, 0, "C", 1)
-    pdf.cell(25, 8, "Risk", 1, 1, "C", 1)
+    story = []
 
-    pdf.set_font("Arial", "", 10)
+    # Title section
+    story.append(Paragraph("🔐 <b>VulnScanner Security Report</b>", header_style))
+    story.append(Paragraph(f"📍 <b>Target:</b> {target}", normal_style))
+    story.append(Paragraph(f"🕒 <b>Scan Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
+    story.append(Spacer(1, 12))
+
+    # Ports/Services Table
+    data = [["Port", "Protocol", "Service", "Product", "Version", "Risk"]]
     for item in results:
-        pdf.cell(20, 8, str(item.get("port", "-")), 1)
-        pdf.cell(20, 8, item.get("protocol", "-"), 1)
-        pdf.cell(30, 8, item.get("service", "-"), 1)
-        pdf.cell(30, 8, item.get("product", "-"), 1)
-        pdf.cell(30, 8, item.get("version", "-"), 1)
-        pdf.cell(25, 8, item.get("risk", "-"), 1, ln=1)
+        data.append([
+            str(item.get("port", "-")),
+            item.get("protocol", "-"),
+            item.get("service", "-"),
+            item.get("product", "-"),
+            item.get("version", "-"),
+            item.get("risk", "-").capitalize()
+        ])
+    table = Table(data, hAlign="LEFT")
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#f5f5f5")),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 16))
 
-    return pdf.output(dest="S").encode("latin1")
+    # Vulnerabilities
+    for item in results:
+        vulns = item.get("vulnerability", [])
+        if vulns:
+            story.append(Paragraph(f"🔎 <b>Vulnerabilities on Port {item['port']} ({item.get('service', '-')})</b>", subheader_style))
+            for vuln in vulns:
+                cve = vuln.get("id", "-")
+                title = vuln.get("title", "-")
+                
+                # Extract score from title if cvss is None
+                cvss = vuln.get("cvss")
+                if not cvss or not isinstance(cvss, (float, int, str)) or str(cvss).lower() == 'null':
+                    try:
+                        cvss = title.split()[0] if title.split()[0].replace('.', '').isdigit() else "-"
+                    except:
+                        cvss = "-"
+
+                # Solution: derive from URL if present
+                solution = vuln.get("solution")
+                if not solution or solution.strip() == "-":
+                    try:
+                        solution = "Refer: " + title.split()[-1] if "http" in title.split()[-1] else "-"
+                    except:
+                        solution = "-"
+
+                story.append(Paragraph(f"<b>🛡️ {cve}</b>: {title}", normal_style))
+                story.append(Paragraph(f"• <b>CVSS Score:</b> {cvss}", normal_style))
+                story.append(Paragraph(f"• <b>Recommended Fix:</b> {solution}", normal_style))
+                story.append(Spacer(1, 8))
+
+    doc.build(story)
+    pdf_data = buffer.getvalue()
+    buffer.close()
+    return pdf_data

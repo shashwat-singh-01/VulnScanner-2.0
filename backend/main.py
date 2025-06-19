@@ -1,23 +1,21 @@
 # backend/main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import scan
 
-from utils.scoring import get_port_risk
-
-
 app = FastAPI()
 
-# Allow frontend dev access (adjust for prod)
+# Middleware for CORS (adjust `allow_origins` as needed for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000"],  # Frontend origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include scanning route
+# Include all routes from the scan module
 app.include_router(scan.router)
 
 @app.get("/")

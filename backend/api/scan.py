@@ -1,43 +1,48 @@
 from fastapi import APIRouter, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from io import BytesIO
-
+import subprocess
+import json
+import socket
 from scanner.nmap_scan import run_nmap
 from utils.pdf_report import generate_pdf_report
 
 router = APIRouter()
 
-@router.get("/scan")
-def scan_target(ip: str = Query(..., description="Target IP address")):
-    result = run_nmap(ip)
-    return {
-        "target": ip,
-        "results": result
-    }
+# Updated Vulnerability model with nullable fields
+class Vulnerability(BaseModel):
+    id: str
+    title: str
+    cvss: Optional[str] = None
+    solution: Optional[str] = None
 
-
-# Define input schema for PDF report generation
 class ScanResult(BaseModel):
     port: int
     protocol: str
-    service: Optional[str] = ""
-    product: Optional[str] = ""
-    version: Optional[str] = ""
+    state: Optional[str] = None
+    service: Optional[str] = None
+    product: Optional[str] = None
+    version: Optional[str] = None
     risk: Optional[str] = "low"
+    vulnerability: Optional[List[Vulnerability]] = []
 
 class ReportRequest(BaseModel):
     target: str
     results: List[ScanResult]
 
+@router.get("/scan")
+def scan(ip: str):
+    result = run_nmap(ip)
+    if "error" in result:
+        return JSONResponse(content={"status": "unreachable", "message": result["error"]}, status_code=200)
+    return {"status": "ok", "results": result}
+
+
 @router.post("/generate_report")
-def create_report(data: ReportRequest):
-    pdf_bytes = generate_pdf_report(data.target, [r.dict() for r in data.results])
-    pdf_io = BytesIO(pdf_bytes)
-    
-    return StreamingResponse(
-        pdf_io,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=VulnScan_Report_{data.target}.pdf"}
-    )
+def create_report(data: dict):
+    target = data.get("target")
+    results = data.get("results", [])
+    pdf_bytes = generate_pdf_report(target, results)
+    return Response(content=pdf_bytes, media_type="application/pdf")
