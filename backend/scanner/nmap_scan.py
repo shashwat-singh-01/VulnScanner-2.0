@@ -8,18 +8,48 @@ nmap_path = r"C:\Program Files (x86)\Nmap"
 if nmap_path not in os.environ["PATH"]:
     os.environ["PATH"] += os.pathsep + nmap_path
 
-def run_nmap(ip_or_domain):
+import os
+import socket
+import nmap
+from utils.scoring import get_port_risk
+
+# Ensure Nmap path is included
+nmap_path = r"C:\Program Files (x86)\Nmap"
+if nmap_path not in os.environ["PATH"]:
+    os.environ["PATH"] += os.pathsep + nmap_path
+
+def run_nmap(ip_or_domain, options=None):
     try:
+        if options is None:
+            options = {}
+
         print(f"[INFO] Input: {ip_or_domain}")
         resolved_ip = socket.gethostbyname(ip_or_domain)
         print(f"[INFO] Resolved to IP: {resolved_ip}")
 
+        # Advanced options
+        custom_ports = options.get("ports", "").strip()
+        use_udp = options.get("udp", False)
+        timing = options.get("timing", "T4")
+        script = options.get("script", "vulners")
+
+        # Build Nmap arguments dynamically
+        scan_args = f"-Pn -sV -{'sU' if use_udp else 'sS'} -{timing}"
+
+        if script:
+            scan_args += f" --script {script}"
+
+        if custom_ports:
+            scan_args += f" -p {custom_ports}"
+        else:
+            scan_args += " --top-ports 100"
+
+        print(f"[INFO] Final Nmap arguments: {scan_args}")
         nm = nmap.PortScanner()
-        nm.scan(resolved_ip, arguments='-Pn -sS -sV -T4 --script vulners --top-ports 100')
+        nm.scan(resolved_ip, arguments=scan_args)
 
         if resolved_ip not in nm.all_hosts():
-            return {"error": f"The host '{ip_or_domain}' appears to be down or blocking ping probes."}
-
+            return {"error": f"The host '{ip_or_domain}' appears to be down or blocking probes."}
 
         results = []
 
@@ -31,7 +61,6 @@ def run_nmap(ip_or_domain):
                 product = nm[resolved_ip][proto][port].get('product', '')
                 version = nm[resolved_ip][proto][port].get('version', '')
 
-                # Extract script output
                 scripts = nm[resolved_ip][proto][port].get('script', {})
                 vuln_info = []
 
@@ -48,7 +77,9 @@ def run_nmap(ip_or_domain):
                                             cvss = float(p.replace("CVSS:", ""))
                                         except:
                                             pass
-                                title = " ".join([p for p in parts if not p.startswith("CVE") and not p.startswith("CVSS:")])
+                                title = " ".join(
+                                    [p for p in parts if not p.startswith("CVE") and not p.startswith("CVSS:")]
+                                )
                                 vuln_info.append({
                                     "id": cve_id,
                                     "cvss": cvss,
@@ -67,10 +98,9 @@ def run_nmap(ip_or_domain):
                     "risk": get_port_risk(port),
                     "vulnerability": vuln_info or "None"
                 })
-                
+
         if not results:
             return {"error": f"The host '{ip_or_domain}' appears to be down or blocking probes."}
-
 
         return results
 
