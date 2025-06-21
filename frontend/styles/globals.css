@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: transparent;
+  color: white;
+  font-family: 'Fira Code', monospace;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* 🟦 Static glowing blue bubble */
+.glow-bubble {
+  position: fixed;
+  top: 30%;
+  left: 40%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 60%);
+  filter: blur(100px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ✨ Moving small dot particles */
+.particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(#00ffe122 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: moveParticles 25s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes moveParticles {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100px 100px;
+  }
+}
+.glow {
+  text-shadow: 0 0 4px #0ea5e9, 0 0 10px #0ea5e9, 0 0 18px #0ea5e9;
+}
+.glow-blue {
+  filter: drop-shadow(0 0 6px #0ea5e9);
+  transition: filter 0.3s ease;
+}
+
+.glow-blue:hover {
+  filter: drop-shadow(0 0 12px #0ea5e9) drop-shadow(0 0 18px #0ea5e9);
+}
+
+.particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, #0ea5e944 1px, transparent 0),   /* Small dots */
+    radial-gradient(circle, #22d3ee66 2px, transparent 0),   /* Medium dots */
+    radial-gradient(circle, #38bdf866 3px, transparent 0);   /* Big dots */
+  background-size: 30px 30px, 80px 80px, 140px 140px;
+  background-position:
+    0 0,
+    40px 40px,
+    70px 70px;
+  animation: animateDots 60s linear infinite;
+  pointer-events: none;
+  opacity: 0.4;
+  filter: drop-shadow(0 0 6px #0ea5e9aa);
+}
+
+@keyframes animateDots {
+  0% {
+    background-position:
+      0 0,
+      40px 40px,
+      70px 70px;
+  }
+  100% {
+    background-position:
+      120px 120px,
+      160px 160px,
+      240px 240px;
+  }
+}
+/* Stylish dark-mode scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a2332; /* matches result sidebar */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #0ea5e9; /* tailwind blue */
+  border-radius: 6px;
+  border: 2px solid #1a2332; /* inner padding illusion */
+}
+
+/* Optional: on hover for smooth feel */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #38bdf8; /* lighter blue */
+}
+.bg-test {
+  background-image: url('https://picsum.photos/2000/1500');
+  background-size: cover;
+}
+/* Force backdrop filter support */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* for Safari */
+}
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px #0ea5e9);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px #0ea5e9);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+.glow-icon {
+  filter: drop-shadow(0 0 6px #0ea5e9);
+  transition: filter 0.3s ease;
+}
+
+.glow-icon:hover {
+  filter: drop-shadow(0 0 12px #0ea5e9) drop-shadow(0 0 18px #0ea5e9);
+}
+
