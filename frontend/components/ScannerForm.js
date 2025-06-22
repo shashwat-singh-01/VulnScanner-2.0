@@ -23,6 +23,9 @@ export default function ScannerForm() {
   const [error, setError] = useState("")
   const [advancedOpen, setAdvancedOpen] = useState(true)
 
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+
   const handleScan = async () => {
     if (!ip.trim()) return
     setLoading(true)
@@ -31,7 +34,7 @@ export default function ScannerForm() {
 
     try {
       const res = await fetch(
-        `http://localhost:8000/scan?ip=${ip}&ports=${customPorts}&udp=${useUDP}&timing=${timing}&script=${script}`
+        `${BASE_URL}/scan?ip=${ip}&ports=${customPorts}&udp=${useUDP}&timing=${timing}&script=${script}`
       )
       const data = await res.json()
 
@@ -190,7 +193,7 @@ export default function ScannerForm() {
                   onClick={async () => {
                     if (!ip || results.length === 0) return
 
-                    const res = await fetch("http://localhost:8000/generate_report", {
+                    const res = await fetch(`${BASE_URL}/generate_report`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ target: ip, results }),
