@@ -143,3 +143,5 @@ htmlcov/
 *.bak
 *.swp
 *.swo
+.env
+.env.local
