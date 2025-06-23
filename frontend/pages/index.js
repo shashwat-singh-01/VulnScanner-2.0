@@ -1,4 +1,5 @@
 // pages/index.js or pages/index.tsx
+import Head from "next/head"
 import ScannerRadar from "../components/ScannerRadar";
 import ParticlesBackground from "../components/ParticlesBackground";
 import ScannerForm from "../components/ScannerForm";
@@ -8,6 +9,10 @@ import SocialIcons from "../components/SocialIcons";
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0f1d] text-white relative">
+      {/* Set HTML Title */}
+      <Head>
+        <title>VulnScanner 2.0</title>
+      </Head>
       {/* Social icons */}
       <SocialIcons />
 
