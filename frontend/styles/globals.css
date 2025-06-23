@@ -27,7 +27,7 @@ body {
 }
 
 /* ✨ Moving small dot particles */
-.particles-bg {
+/*.particles-bg {
   position: fixed;
   top: 0;
   left: 0;
@@ -38,7 +38,7 @@ body {
   background-size: 20px 20px;
   animation: moveParticles 25s linear infinite;
   pointer-events: none;
-}
+}*/
 
 @keyframes moveParticles {
   0% {
@@ -68,34 +68,35 @@ body {
   width: 100%;
   height: 100%;
   background-image:
-    radial-gradient(circle, #0ea5e944 1px, transparent 0),   /* Small dots */
-    radial-gradient(circle, #22d3ee66 2px, transparent 0),   /* Medium dots */
-    radial-gradient(circle, #38bdf866 3px, transparent 0);   /* Big dots */
+    radial-gradient(circle, #0ea5e944 1px, transparent 0),
+    radial-gradient(circle, #22d3ee66 2px, transparent 0),
+    radial-gradient(circle, #38bdf866 3px, transparent 0);
   background-size: 30px 30px, 80px 80px, 140px 140px;
-  background-position:
-    0 0,
-    40px 40px,
-    70px 70px;
-  animation: animateDots 60s linear infinite;
+  background-position: 0 0, 0 0, 0 0;
+  animation: animateDots 80s linear infinite;
   pointer-events: none;
   opacity: 0.4;
   filter: drop-shadow(0 0 6px #0ea5e9aa);
 }
 
+
+
 @keyframes animateDots {
   0% {
     background-position:
       0 0,
-      40px 40px,
-      70px 70px;
+      0 0,
+      0 0;
   }
   100% {
     background-position:
-      120px 120px,
-      160px 160px,
-      240px 240px;
+      300px 300px,
+      600px 600px,
+      900px 900px;
   }
 }
+
+
 /* Stylish dark-mode scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

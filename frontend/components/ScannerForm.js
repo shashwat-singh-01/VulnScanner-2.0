@@ -1,6 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+
+
+
+import { useEffect, useState, useRef } from "react"
+
 import {
   Shield,
   Home,
@@ -24,6 +28,7 @@ export default function ScannerForm() {
   const [advancedOpen, setAdvancedOpen] = useState(true)
 
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 
 
   const handleScan = async () => {
